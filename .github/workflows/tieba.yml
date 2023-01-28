@@ -1,0 +1,53 @@
+name: 'Baidu Tieba Auto Sign'
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '5 16,22 * * *'
+  workflow_dispatch:
+
+jobs:
+  tieba_sign:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.10']
+        poetry-version: ['1.3.2']
+
+    steps:
+      - name: 'Checkout codes'
+        uses: actions/checkout@v3
+
+      - name: Setup poetry ${{ matrix.poetry-version }}
+        run: |
+          curl -O -sSL https://install.python-poetry.org/install-poetry.py
+          python install-poetry.py -y --version ${{ matrix.poetry-version }}
+          echo "PATH=${HOME}/.poetry/bin:${PATH}" >> $GITHUB_ENV
+          rm install-poetry.py
+
+      - name: Setup python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install dependencies
+        run: |
+          # This is required to do as of @actions/checkout@v3 to prevent default action python (3.8) from being used
+          poetry env use ${{ matrix.python-version }}
+          poetry install --no-dev
+
+      - name: Print python versions
+        run: |
+          python -V
+          poetry run python -V
+          poetry -V
+
+      - name: Start Sign
+        env:
+          BDUSS: ${{ secrets.BDUSS }}
+        run: poetry run python app/tieba.py

@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "my-actions"
+version = "0.1.0"
+description = ""
+authors = ["滑稽 <2282373181@qq.com>"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+httpx = "^0.23.3"
+
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.11.4"
+autoflake = "^2.0.0"
+mypy = "^0.991"
+flake8 = "^6.0.0"
+pre-commit = "^3.0.1"
+commitizen = "^2.40.0"
+black = "^22.12.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+lint = "scripts.lint:main"
+format = "scripts.format:main"
+
+[tool.isort]
+profile = "black"
+src_paths = ["app", "tests"]
+
+[[tool.poetry.source]]
+name = "aliyun"
+url = "http://mirrors.aliyun.com/pypi/simple"
+default = true

@@ -1,0 +1,116 @@
+# [tool.commitizen]
+# name = "cz_conventional_extend_commits"
+# version = "0.1.0"
+# version_files = [
+#   "pyproject.toml:version"
+# ]
+
+[tool.commitizen]
+name = "cz_customize"
+version = "0.1.0"
+version_files = ["pyproject.toml:version"]
+
+[tool.commitizen.customize]
+message_template = "{{change_type}}{% if scope %}{{'(' + scope + ')'}}{% endif %}: {{subject}}{% if body %}{{'\n\n' + body}}{% endif %}{% if is_breaking_change %}{{'\n\nBREAKING CHANGE: ' + footer}}{% else %}{{'\n\n' + footer}}{% endif %}"
+schema = """\
+<type>(<scope>): <subject>\
+<BLANK LINE>\
+<body>\
+<BLANK LINE>\
+(BREAKING CHANGE: )<footer>\
+"""
+schema_pattern = '(?s)(build|ci|docs|feat|fix|perf|refactor|style|test|chore|revert|bump|init|chore|revert)(\(\S+\))?!?:( [^\n\r]+)((\n\n.*)|(\s*))?$'
+commit_parser = '^(?P<change_type>feat|fix|refactor|perf|BREAKING CHANGE)(?:\\((?P<scope>[^\\n]*)\\)|\\()?(?P<breaking>!)?:\\s(?P<message>.*)?'
+changelog_pattern = '^(BREAKING[\\-\\ ]CHANGE|feat|fix|refactor|perf)(\\(.+\\))?(!)?'
+change_type_map = { feat = "Feat", fix = "Fix", refactor = "Refactor", perf = "Perf" }
+
+[[tool.commitizen.customize.questions]]
+type = "list"
+name = "change_type"
+message = "请选择提交类型"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "init"
+name = "🎉 init: 项目初始化"
+key = "i"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "feat"
+name = "✨ feat: 添加新特性. 与 SemVer 的 MINOR 相关"
+key = "f"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "fix"
+name = "🐞 fix: 修复bug. 与 SemVer 的 PATCH 相关"
+key = "x"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "docs"
+name = "📃 docs: 仅仅修改文档"
+key = "d"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "style"
+name = "🌈 style: 仅仅修改了空格、格式缩进、逗号等等，不改变代码逻辑"
+key = "s"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "refactor"
+name = "🦄 refactor: 代码重构，没有加新功能或者修复bug"
+key = "r"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "perf"
+name = "🎈 perf: 优化相关，比如提升性能、体验"
+key = "p"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "test"
+name = "🧪 test: 增加测试用例"
+key = "t"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "build"
+name = "🔧 build: 依赖相关的内容"
+key = "b"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "ci"
+name = "🐎 ci: ci配置相关 例如对 k8s，docker的配置文件的修改"
+key = "c"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "chore"
+name = "🐳 chore: 改变构建流程、或者增加依赖库、工具等"
+key = "e"
+
+[[tool.commitizen.customize.questions.choices]]
+value = "revert"
+name = "⏪️ revert: 回滚到上一个版本"
+key = "v"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "scope"
+message = "本次修改包含哪些模块? (class 或 文件名): (输入 [enter] 跳过)\n"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "subject"
+message = "提交概述，建议不超过20个字符: (输入 [enter] 跳过)\n"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "body"
+message = "提交详情，可换行显示: (输入 [enter] 跳过)\n"
+
+[[tool.commitizen.customize.questions]]
+type = "confirm"
+name = "is_breaking_change"
+message = "本次内容是否为 BREAKING CHANGE? 与 SemVer 的 MAJOR 相关"
+default = false
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "footer"
+message = "通常是修复 bug 的链接或编号: (输入 [enter] 跳过)\n"
