@@ -1,9 +1,6 @@
 name: 'Picage Auto Sign'
 
 on:
-  push:
-    branches:
-      - master
   schedule:
     - cron: '5 16,22 * * *'
   workflow_dispatch:
