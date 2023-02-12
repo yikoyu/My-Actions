@@ -200,14 +200,14 @@ reference = "aliyun"
 
 [[package]]
 name = "commitizen"
-version = "2.40.0"
+version = "2.42.0"
 description = "Python commitizen client tool"
 category = "dev"
 optional = false
 python-versions = ">=3.6.2,<4.0.0"
 files = [
-    {file = "commitizen-2.40.0-py3-none-any.whl", hash = "sha256:44b589869529c297d4ef594bb7560388d3367b3ae8af36b0664d2f51a28e8f87"},
-    {file = "commitizen-2.40.0.tar.gz", hash = "sha256:8f1a09589ffb87bb17df17261423e88299bd63432dbfc4e6fc6657fea23dddc0"},
+    {file = "commitizen-2.42.0-py3-none-any.whl", hash = "sha256:3be082c1eecbf1a1fb4c390fbbd3fd26be39e0f105f30c9079fc0e789386d08d"},
+    {file = "commitizen-2.42.0.tar.gz", hash = "sha256:c4c944408f3d55ca22b1c136e22217c167123c54f46730eb27a1c6503d705c69"},
 ]
 
 [package.dependencies]
@@ -1026,4 +1026,4 @@ reference = "aliyun"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "6306ca4217cc1faed8adc2ffc71a740995f69add085dc0128c905dd2be7602c0"
+content-hash = "b473ba8803f711df251dda749f23b273161a0be6fc8027d38683b95cd3c1e143"
