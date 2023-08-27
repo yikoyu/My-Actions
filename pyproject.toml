@@ -17,7 +17,7 @@ autoflake = "^2.2.0"
 mypy = "^1.5.1"
 flake8 = "^6.1.0"
 pre-commit = "^3.3.3"
-commitizen = "^3.6.0"
+commitizen = "^3.7.0"
 black = "^22.12.0"
 
 [build-system]
