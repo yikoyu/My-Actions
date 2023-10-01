@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: 'Checkout codes'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup poetry ${{ matrix.poetry-version }}
         run: |
