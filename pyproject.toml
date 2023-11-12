@@ -14,7 +14,7 @@ httpx = "^0.25.1"
 [tool.poetry.group.dev.dependencies]
 isort = "^5.12.0"
 autoflake = "^2.2.1"
-mypy = "^1.6.1"
+mypy = "^1.7.0"
 flake8 = "^6.1.0"
 pre-commit = "^3.5.0"
 commitizen = "^3.12.0"
