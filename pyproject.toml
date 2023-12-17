@@ -12,7 +12,7 @@ httpx = "^0.25.2"
 
 
 [tool.poetry.group.dev.dependencies]
-isort = "^5.13.0"
+isort = "^5.13.2"
 autoflake = "^2.2.1"
 mypy = "^1.7.1"
 flake8 = "^6.1.0"
