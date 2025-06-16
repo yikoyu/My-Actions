@@ -1,0 +1,24 @@
+{
+  "name": "my-actions",
+  "version": "1.0.0",
+  "packageManager": "pnpm@10.12.1",
+  "description": "",
+  "author": "",
+  "license": "ISC",
+  "keywords": [],
+  "main": "index.js",
+  "scripts": {
+    "sign:tieba": "tsx src/tieba.ts",
+    "sign:bika": "tsx src/bika.ts",
+    "sign:lenovo": "tsx src/sign_lenovo.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.14.1",
+    "@types/node": "^24.0.1",
+    "eslint": "^9.28.0",
+    "tsx": "^4.20.2",
+    "typescript": "^5.8.3"
+  }
+}

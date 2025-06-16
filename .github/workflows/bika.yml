@@ -1,0 +1,34 @@
+name: Picage Auto Sign
+
+on:
+  schedule:
+    # 上海时区当天 6:15 和 16:15（对应 UTC 前一天 22:15 和当天 8:15）
+    - cron: '15 22,8 * * *'
+  workflow_dispatch:
+
+jobs:
+  bika_sign:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    env:
+      TZ: Asia/Shanghai # 全局时区设置
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 显示当前时间
+        run: |
+          echo "UTC 时间: $(date -u '+%F %T')"
+          echo "北京时间: $(date '+%F %T')"
+
+      - uses: ./.github/actions/build-setup
+
+      - name: Sign
+        env:
+          BIKA_USER: ${{ secrets.BIKA_USER }}
+          BIKA_PASS: ${{ secrets.BIKA_PASS }}
+        run: pnpm sign:bika
