@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import process from 'node:process'
 import { setTimeout } from 'node:timers/promises'
+import { DingtalkRobot } from './utils/dingtalk-robot'
 
 // 优化后的日志系统
 function createLogger(name: string) {
@@ -33,7 +34,7 @@ function createLogger(name: string) {
     const time = formatTime()
     const levelColor = getLevelColor(level)
     const resetColor = '\x1B[0m'
-    // eslint-disable-next-line no-console
+
     console.log(`${levelColor}[${time}] [${padString(level, 5)}] [${name}]${prefix} ${message}${resetColor}`)
   }
 
@@ -48,13 +49,18 @@ function createLogger(name: string) {
     },
     groupEnd: (title: string) => {
       log('INFO', title)
-      // eslint-disable-next-line no-console
+
       console.log() // 添加空行分隔
     },
     signResult: (forumName: string, index: number, total: number, result: any) => {
       const code = result.error_code || '200'
-      const status = code === '0' ? '成功' : '失败'
-      const color = code === '0' ? '\x1B[32m' : '\x1B[31m'
+      // 新增已签到状态判断（error_code=160002）
+      const status = code === '0'
+        ? '成功'
+        : (code === '160002' ? '已签到' : '失败')
+      const color = code === '0' || code === '160002'
+        ? '\x1B[32m'
+        : '\x1B[31m'
       const reset = '\x1B[0m'
 
       log('INFO', `签到 "${forumName}" 贴吧 (${index}/${total}) ${color}[${status}]${reset}`)
@@ -72,7 +78,6 @@ function createLogger(name: string) {
         log('INFO', `    当前等级: ${userInfo.level_name} (${userInfo.levelup_score}经验升级)`)
       }
 
-      // eslint-disable-next-line no-console
       console.log()
     },
   }
@@ -104,7 +109,7 @@ interface Forum {
   // 其他可能的字段
 }
 
-// 签到结果接口
+/** 签到结果接口 */
 interface SignResult {
   error_code?: string
   error_msg?: string
@@ -118,6 +123,22 @@ interface SignResult {
     levelup_score: string
   }
   // 其他可能的字段
+}
+
+/**
+ * 签到统计接口
+ */
+interface UserSignStats {
+  /** 用户标识（BDUSS前8位） */
+  userId: string
+  /** 总贴吧数 */
+  totalForums: number
+  /** 成功签到数（包含已签到） */
+  successfulSigns: number
+  /** 失败签到数 */
+  failedSigns: number
+  /** 失败的贴吧名称列表 */
+  failedForums: string[]
 }
 
 export class TiebaAutoSign {
@@ -299,24 +320,33 @@ export class TiebaAutoSign {
   }
 
   // 随机延时
-  private static async randomDelay(min: number = 1000, max: number = 4000): Promise<void> {
+  private static async randomDelay(min: number = 500, max: number = 2000): Promise<void> {
     const delay = Math.floor(Math.random() * (max - min)) + min
     this.logger.debug(`等待 ${delay}ms 后继续`)
     await setTimeout(delay)
   }
 
-  // 执行单个用户的签到流程
-  public static async signForUser(bduss: string): Promise<void> {
+  // 执行单个用户的签到流程，返回统计信息
+  public static async signForUser(bduss: string): Promise<UserSignStats> {
     this.logger.group(`用户签到流程`)
+    const userId = bduss.slice(0, 8)
+    const stats: UserSignStats = {
+      userId,
+      totalForums: 0,
+      successfulSigns: 0,
+      failedSigns: 0,
+      failedForums: [],
+    }
 
     try {
       const tbs = await this.getTbs(bduss)
       const favorites = await this.getFavorite(bduss)
+      stats.totalForums = favorites.length
 
       if (favorites.length === 0) {
         this.logger.warn('未获取到关注的贴吧')
         this.logger.groupEnd(`用户签到流程`)
-        return
+        return stats
       }
 
       this.logger.info(`开始签到 ${favorites.length} 个贴吧`)
@@ -325,24 +355,40 @@ export class TiebaAutoSign {
         const forum = favorites[i]
         await this.randomDelay()
         const result = await this.clientSign(bduss, tbs, forum.id, forum.name)
+        const code = result.error_code || '200'
+
+        // 更新统计信息，区分已签到和真正失败
+        if (code === '0' || code === '160002') {
+          stats.successfulSigns++ // 已签到也计入成功
+        }
+        else {
+          stats.failedSigns++
+          stats.failedForums.push(forum.name)
+        }
+
         this.logger.signResult(forum.name, i + 1, favorites.length, result)
       }
 
       this.logger.info('所有贴吧签到完成')
       this.logger.groupEnd(`用户签到流程`)
+      return stats
     }
     catch (error) {
       this.logger.error(`用户签到失败: ${error}`)
       this.logger.groupEnd(`用户签到流程`)
-      throw error
+      // 标记所有签到为失败
+      stats.failedSigns = stats.totalForums
+      stats.failedForums = ['签到过程中发生异常']
+      return stats
     }
   }
 
-  // 执行所有用户的签到
-  public static async signAllUsers(): Promise<void> {
+  // 执行所有用户的签到并收集统计信息
+  public static async signAllUsers(): Promise<UserSignStats[]> {
     this.logger.group('批量签到任务')
 
-    const bdussList = process.env.BDUSS?.split('#') || []
+    const bdussList = process.env.BDUSS?.split('#').filter(k => k) || []
+    const allStats: UserSignStats[] = []
 
     if (bdussList.length === 0) {
       this.logger.error('未配置 BDUSS 环境变量')
@@ -358,10 +404,19 @@ export class TiebaAutoSign {
       this.logger.info(`用户 #${i + 1} BDUSS: ${bduss.slice(0, 8)}...`)
 
       try {
-        await this.signForUser(bduss)
+        const stats = await this.signForUser(bduss)
+        allStats.push(stats)
       }
       catch (error) {
         this.logger.error(`用户 #${i + 1} 签到异常: ${error}`)
+        // 添加异常统计
+        allStats.push({
+          userId: bduss.slice(0, 8),
+          totalForums: 0,
+          successfulSigns: 0,
+          failedSigns: 0,
+          failedForums: ['签到过程中发生异常'],
+        })
       }
 
       this.logger.groupEnd(`处理用户 #${i + 1}/${bdussList.length}`)
@@ -369,16 +424,80 @@ export class TiebaAutoSign {
 
     this.logger.info('所有用户签到任务完成')
     this.logger.groupEnd('批量签到任务')
+    return allStats
+  }
+
+  // 生成签到总结Markdown内容
+  static generateSummary(statsList: UserSignStats[]): string {
+    let summary = '### 贴吧签到总结\n\n'
+    summary += '#### 今日签到统计\n\n'
+
+    statsList.forEach((stats, index) => {
+      summary += `**用户 ${index + 1} (${stats.userId})**\n`
+      summary += `- 总贴吧数: ${stats.totalForums}\n`
+      summary += `- 成功/已签到: ${stats.successfulSigns}\n`
+      summary += `- 失败数: ${stats.failedSigns}\n`
+
+      if (stats.failedSigns > 0) {
+        summary += `- 失败贴吧: ${stats.failedForums.join('、')}\n`
+      }
+
+      summary += '\n'
+    })
+
+    // 计算全局统计
+    const totalForums = statsList.reduce((sum, stats) => sum + stats.totalForums, 0)
+    const totalSuccess = statsList.reduce((sum, stats) => sum + stats.successfulSigns, 0)
+    const totalFailed = statsList.reduce((sum, stats) => sum + stats.failedSigns, 0)
+
+    summary += '#### 全局统计\n'
+    summary += `- 总用户数: ${statsList.length}\n`
+    summary += `- 总贴吧数: ${totalForums}\n`
+    summary += `- 成功/已签到数: ${totalSuccess}\n`
+    summary += `- 失败数: ${totalFailed}\n`
+    summary += `- 成功率: ${totalForums > 0 ? ((totalSuccess / totalForums) * 100).toFixed(2) : 0}%\n`
+
+    return summary
+  }
+
+  // 发送总结到钉钉
+  public static async sendSummaryToDingTalk(summary: string): Promise<void> {
+    try {
+      const result = await DingtalkRobot.sendMarkdown('[签到提醒] 贴吧签到', summary)
+      if (result === null) {
+        return
+      }
+      this.logger.info('签到总结已发送至钉钉')
+    }
+    catch (error) {
+      this.logger.error(`发送钉钉总结失败: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 }
 
 // 执行主函数
 async function main() {
   try {
-    await TiebaAutoSign.signAllUsers()
+    const statsList = await TiebaAutoSign.signAllUsers()
+    const summary = TiebaAutoSign.generateSummary(statsList)
+
+    // 输出总结到控制台
+    console.log(`\n${summary}`)
+
+    // 发送总结到钉钉
+    await TiebaAutoSign.sendSummaryToDingTalk(summary)
   }
   catch (error) {
     console.error(`\x1B[31m[程序错误] ${error}\x1B[0m`)
+
+    // 即使程序出错，也尝试发送错误总结
+    try {
+      await TiebaAutoSign.sendSummaryToDingTalk(`### 贴吧签到异常\n\n[程序错误] ${error}`)
+    }
+    catch (sendError) {
+      console.error(`发送错误通知失败: ${sendError}`)
+    }
+
     process.exit(1)
   }
 }

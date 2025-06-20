@@ -42,3 +42,4 @@ pnpm install
 | `BIKA_PASS`   | 哔咔漫画密码    | 哔咔漫画密码                       |
 | `LENOVO_USER`   | 联想APP账号    | 联想APP账号                       |
 | `LENOVO_PASS`   | 联想APP密码    | 联想APP密码                       |
+| `DINGTALK_ACCESS_TOKEN` | 钉钉机器人 Token | 钉钉群机器人 access_token，用于推送签到结果通知（可选，未设置时不发送通知） |

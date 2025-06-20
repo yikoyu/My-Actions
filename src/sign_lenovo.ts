@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { createCipheriv } from 'node:crypto'
 import process from 'node:process'
+import { DingtalkRobot } from './utils/dingtalk-robot' // 假设已引入钉钉机器人类
 
 /**
  * 联想延保签到工具类
@@ -82,7 +83,7 @@ class LenovoSignIn {
    * @param message 日志内容
    * @param data 附加数据
    */
-  private static log(level: 'INFO' | 'ERROR' | 'DEBUG', message: string, data?: any): void {
+  static log(level: 'INFO' | 'ERROR' | 'DEBUG', message: string, data?: any): void {
     const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ')
     const logPrefix = `[${timestamp}] [${level}] [联想延保签到]`
 
@@ -196,7 +197,7 @@ class LenovoSignIn {
     this.log('INFO', '开始执行每日签到')
 
     try {
-    // 更新请求头
+      // 更新请求头
       this.requestHeaders.Authorization = `Lenovo ${sessionInfo.sessionId}`
       this.requestHeaders.token = sessionInfo.token
       this.requestHeaders['User-Agent'] = 'Apache-HttpClient/UNAVAILABLE (java 1.5)'
@@ -215,7 +216,7 @@ class LenovoSignIn {
       this.log('DEBUG', '签到请求返回', signResult)
 
       if (typeof signResult === 'object') {
-      // 处理重复签到的情况
+        // 处理重复签到的情况
         if (signResult.status === 1 && signResult.res?.error_code === 20813) {
           this.log('INFO', '今日已完成签到', signResult.res)
           return '今日已完成签到，无需重复操作'
@@ -296,12 +297,61 @@ class LenovoSignIn {
   }
 }
 
-(() => {
-  const { LENOVO_USER = '', LENOVO_PASS = '' } = process.env
-  LenovoSignIn.execute(LENOVO_USER, LENOVO_PASS)
-    .then(result => console.log(`\n===== 任务执行结果 =====\n${result}`))
-    .catch((error) => {
-      console.error(`\n===== 任务执行异常 =====\n${error}`)
-      process.exit(1)
-    })
+(async () => {
+  try {
+    const { LENOVO_USER = '', LENOVO_PASS = '' } = process.env
+
+    // 执行签到任务
+    const result = await LenovoSignIn.execute(LENOVO_USER, LENOVO_PASS)
+    console.log(`\n===== 任务执行结果 =====\n${result}`)
+
+    // 发送钉钉通知
+    const isSuccess = !result.includes('失败') && !result.includes('异常')
+    const dingtalkTitle = isSuccess ? '[签到提醒] 联想延保签到成功' : '[签到提醒] 联想延保签到失败'
+
+    const dingtalkContent = [
+      '# 联想延保签到结果',
+      isSuccess ? '✅ 签到成功' : '❌ 签到失败',
+      '',
+      '## 详细信息',
+      '```',
+      result,
+      '```',
+      '',
+      `执行时间: ${new Date().toLocaleString()}`,
+    ].join('\n').trim()
+
+    const sendResult = await DingtalkRobot.sendMarkdown(dingtalkTitle, dingtalkContent)
+    if (sendResult !== null) {
+      LenovoSignIn.log('INFO', '钉钉通知发送成功')
+    }
+  }
+  catch (error) {
+    console.error(`\n===== 任务执行异常 =====\n${error}`)
+
+    // 异常时发送钉钉通知
+    try {
+      const dingtalkContent = [
+        '# 联想延保签到异常',
+        '❌ 任务执行过程中发生异常',
+        '',
+        '## 错误详情',
+        '```',
+        error instanceof Error ? error.message : String(error),
+        '```',
+        '',
+        `发生时间: ${new Date().toLocaleString()}`,
+      ].join('\n').trim()
+
+      const sendResult = await DingtalkRobot.sendMarkdown('[签到提醒] 联想延保签到异常', dingtalkContent)
+      if (sendResult !== null) {
+        LenovoSignIn.log('ERROR', '异常通知已发送至钉钉')
+      }
+    }
+    catch (sendError) {
+      LenovoSignIn.log('ERROR', '异常通知发送失败', sendError)
+    }
+
+    process.exit(1)
+  }
 })()

@@ -30,4 +30,5 @@ jobs:
       - name: Sign
         env:
           BDUSS: ${{ secrets.BDUSS }}
+          DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN }}
         run: pnpm sign:tieba
