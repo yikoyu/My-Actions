@@ -1,13 +1,13 @@
-name: Baidu Tieba Auto Sign
+name: Lenovo Auto Sign
 
 on:
   schedule:
-    # 上海时区当天 6:15 和 16:15（对应 UTC 前一天 22:15 和当天 8:15）
-    - cron: '15 22,8 * * *'
+    # 上海时区当天 8:15 和 16:15（对应 UTC 当天 00:15 和当天 8:15）
+    - cron: '15 0 * * *'
   workflow_dispatch:
 
 jobs:
-  tieba_sign:
+  lenovo_sign:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -29,6 +29,7 @@ jobs:
 
       - name: Sign
         env:
-          BDUSS: ${{ secrets.BDUSS }}
+          LENOVO_USER: ${{ secrets.LENOVO_USER }}
+          LENOVO_PASS: ${{ secrets.LENOVO_PASS }}
           DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN }}
-        run: pnpm sign:tieba
+        run: pnpm sign:lenovo

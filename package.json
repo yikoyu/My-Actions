@@ -8,8 +8,8 @@
   "keywords": [],
   "main": "index.js",
   "scripts": {
-    "sign:tieba": "tsx src/tieba.ts",
-    "sign:bika": "tsx src/bika.ts",
+    "sign:tieba": "tsx src/sign_tieba.ts",
+    "sign:bika": "tsx src/sign_bika.ts",
     "sign:lenovo": "tsx src/sign_lenovo.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

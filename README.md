@@ -21,8 +21,8 @@ pnpm install
 
 # 目前模块
 
-1. [自动打哔咔](./src/bika.ts)
-2. [贴吧自动签到](./src/tieba.ts)
+1. [自动打哔咔](./src/sign_bika.ts)
+2. [贴吧自动签到](./src/sign_tieba.ts)
 3. [联想延保签到](./src/sign_lenovo.ts)
 
 # 定时执行

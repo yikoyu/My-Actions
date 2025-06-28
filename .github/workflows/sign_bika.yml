@@ -2,8 +2,8 @@ name: Picage Auto Sign
 
 on:
   schedule:
-    # 上海时区当天 6:15 和 16:15（对应 UTC 前一天 22:15 和当天 8:15）
-    - cron: '15 22,8 * * *'
+    # 上海时区当天 8:15 和 16:15（对应 UTC 当天 00:15 和当天 8:15）
+    - cron: '15 0 * * *'
   workflow_dispatch:
 
 jobs:
