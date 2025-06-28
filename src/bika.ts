@@ -1,30 +1,7 @@
 import crypto from 'node:crypto'
 import process from 'node:process'
 import { DingtalkRobot } from './utils/dingtalk-robot'
-
-// 配置日志
-function createLogger() {
-  const log = (level: 'info' | 'warn' | 'error', message: string) => {
-    const colors = {
-      info: '\x1B[32m',
-      warn: '\x1B[33m',
-      error: '\x1B[31m',
-      reset: '\x1B[0m',
-    }
-    const levelColor = colors[level] || colors.reset
-    const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19)
-
-    console.log(`${timestamp} - ${levelColor}${level.toUpperCase().padEnd(5)}${colors.reset} - ${message}`)
-  }
-
-  return {
-    info: (message: string) => log('info', message),
-    warn: (message: string) => log('warn', message),
-    error: (message: string) => log('error', message),
-  }
-}
-
-const logger = createLogger()
+import { Logger } from './utils/logger' // 引入新的日志系统
 
 interface SignInResponse {
   code: number
@@ -65,6 +42,10 @@ interface ProfileResponse {
 }
 
 class BiKa {
+  static {
+    Logger.init('bika')
+  }
+
   static BASE_URL = 'https://picaapi.picacomic.com/'
   static GET = 'GET'
   static POST = 'POST'
@@ -188,10 +169,8 @@ function generateDingTalkMessage(profile: ProfileResponse['data']['user'], resul
     const { BIKA_USER, BIKA_PASS } = process.env
 
     if (!BIKA_USER || !BIKA_PASS) {
-      logger.error('未填写哔咔账号密码 取消运行')
-      // 发送钉钉通知，标题格式：[签到提醒] 哔咔漫画
-      await DingtalkRobot.sendMarkdown('[签到提醒] 哔咔漫画', '未填写哔咔账号密码，签到取消')
-      throw new Error('未填写哔咔账号密码')
+      Logger.error('未填写哔咔账号密码 取消运行')
+      throw new Error('未填写哔咔账号密码 取消运行')
     }
 
     const bika = new BiKa()
@@ -199,11 +178,11 @@ function generateDingTalkMessage(profile: ProfileResponse['data']['user'], resul
     const profile = await bika.profile(token)
 
     // 显示用户信息（按照要求的格式）
-    logger.info(`用户信息: 昵称=${profile.name}, 等级=${profile.level}, 经验=${profile.exp}`)
+    Logger.info(`用户信息: 昵称=${profile.name}, 等级=${profile.level}, 经验=${profile.exp}`)
 
     // 已经打过卡
     if (profile.isPunched) {
-      logger.warn('今天已经打过卡')
+      Logger.warn('今天已经打过卡')
       // 发送钉钉通知，标题格式：[签到提醒] 哔咔漫画
       await DingtalkRobot.sendMarkdown('[签到提醒] 哔咔漫画', generateDingTalkMessage(profile))
       return
@@ -212,20 +191,23 @@ function generateDingTalkMessage(profile: ProfileResponse['data']['user'], resul
     // 打卡
     const result = await bika.punchIn(token)
     if (result.status === 'ok') {
-      logger.info(`打卡成功, 最后一次打卡: ${result.punchInLastDay}`)
+      Logger.info(`打卡成功, 最后一次打卡: ${result.punchInLastDay}`)
       // 发送钉钉通知，标题格式：[签到提醒] 哔咔漫画
       await DingtalkRobot.sendMarkdown('[签到提醒] 哔咔漫画', generateDingTalkMessage(profile, result))
     }
     else {
-      logger.warn('重复签到 - Already punch-in')
+      Logger.warn('重复签到 - Already punch-in')
       // 发送钉钉通知，标题格式：[签到提醒] 哔咔漫画
       await DingtalkRobot.sendMarkdown('[签到提醒] 哔咔漫画', generateDingTalkMessage(profile, result))
     }
   }
   catch (error) {
-    logger.error(`运行出错: ${error instanceof Error ? error.message : String(error)}`)
+    Logger.error(`运行出错: ${error instanceof Error ? error.message : String(error)}`)
     // 发送钉钉通知，标题格式：[签到提醒] 哔咔漫画
-    await DingtalkRobot.sendMarkdown('[签到提醒] 哔咔漫画', `运行出错: ${error instanceof Error ? error.message : String(error)}`)
+    const sendResult = await DingtalkRobot.sendMarkdown('[签到提醒] 哔咔漫画', `### 哔咔漫画签到结果\n\n运行出错: ${error instanceof Error ? error.message : String(error)}`)
+    if (sendResult !== null) {
+      Logger.info('异常通知已发送至钉钉')
+    }
     process.exit(1)
   }
 })()

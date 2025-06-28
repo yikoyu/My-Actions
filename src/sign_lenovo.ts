@@ -2,12 +2,18 @@ import { Buffer } from 'node:buffer'
 import { createCipheriv } from 'node:crypto'
 import process from 'node:process'
 import { DingtalkRobot } from './utils/dingtalk-robot' // 假设已引入钉钉机器人类
+import { Logger } from './utils/logger' // 引入新的日志系统
 
 /**
  * 联想延保签到工具类
  * 提供联想账号登录、会话获取及每日签到功能
  */
 class LenovoSignIn {
+  // 初始化日志器
+  static {
+    Logger.init('联想延保签到')
+  }
+
   // 基础设备信息（非敏感）
   private static baseInfo = 'eyJpbWVpIjoiODY1MzE1MDMxOTg1ODc4IiwicGhvbmVicmFuZCI6Imhvbm9yIiwicGhvbmVNb2RlbCI6IkZSRC1BTDEwIiwiYXBwVmVyc2lvbiI6IlY0LjIuNSIsInBob25laW5jcmVtZW50YWwiOiI1NTYoQzAwKSIsIlBhZ2VJbmZvIjoiTXlJbmZvcm1hdGlvbkFjdGlvbkltcGwiLCJwaG9uZWRpc3BsYXkiOiJGUkQtQUwxMCA4LjAuMC41NTYoQzAwKSIsInBob25lTWFudWZhY3R1cmVyIjoiSFVBV0VJIiwibGVub3ZvQ2x1YkNoYW5uZWwiOiJ5aW5neW9uZ2JhbyIsImxvZ2luTmFtZSI6IjE3NjQwNDA4NTM3IiwicGhvbmVwcm9kdWN0IjoiRlJELUFMMTAiLCJzeXN0ZW1WZXJzaW9uIjoiOC4wLjAiLCJhbmRyb2lkc2RrdmVyc2lvbiI6IjI2In0='
 
@@ -84,17 +90,19 @@ class LenovoSignIn {
    * @param data 附加数据
    */
   static log(level: 'INFO' | 'ERROR' | 'DEBUG', message: string, data?: any): void {
-    const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ')
-    const logPrefix = `[${timestamp}] [${level}] [联想延保签到]`
-
-    // 屏蔽敏感数据后输出
     const maskedData = data ? this.maskSensitiveData(data) : null
+    const logMessage = maskedData ? `${message} ${JSON.stringify(maskedData)}` : message
 
-    if (maskedData) {
-      console.log(`${logPrefix} ${message}`, maskedData)
-    }
-    else {
-      console.log(`${logPrefix} ${message}`)
+    switch (level) {
+      case 'INFO':
+        Logger.info(logMessage)
+        break
+      case 'ERROR':
+        Logger.error(logMessage)
+        break
+      case 'DEBUG':
+        Logger.debug(logMessage)
+        break
     }
   }
 
@@ -323,7 +331,7 @@ class LenovoSignIn {
 
     const sendResult = await DingtalkRobot.sendMarkdown(dingtalkTitle, dingtalkContent)
     if (sendResult !== null) {
-      LenovoSignIn.log('INFO', '钉钉通知发送成功')
+      LenovoSignIn.log('INFO', '异常通知已发送至钉钉')
     }
   }
   catch (error) {
