@@ -1,0 +1,37 @@
+name: JMComic Auto Sign
+
+on:
+  schedule:
+    # 上海时区当天 8:15 和 16:15（对应 UTC 当天 00:15 和当天 8:15）
+    - cron: '15 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  sign_jmcomic:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    env:
+      TZ: Asia/Shanghai # 全局时区设置
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 显示当前时间
+        run: |
+          echo "UTC 时间: $(date -u '+%F %T')"
+          echo "北京时间: $(date '+%F %T')"
+
+      - uses: ./.github/actions/build-setup
+
+      - name: Sign
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          JMCOMIC_USERNAME: ${{ secrets.JMCOMIC_USERNAME }}
+          JMCOMIC_PASSWORD: ${{ secrets.JMCOMIC_PASSWORD }}
+          JMCOMIC_COOKIE: ${{ secrets.JMCOMIC_COOKIE }}
+          DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN }}
+        run: pnpm sign:jmcomic

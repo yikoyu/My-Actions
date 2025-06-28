@@ -9,13 +9,18 @@
   "main": "index.js",
   "scripts": {
     "sign:tieba": "tsx src/sign_tieba.ts",
+    "sign:jmcomic": "tsx src/sign_jmcomic.ts",
     "sign:bika": "tsx src/sign_bika.ts",
     "sign:lenovo": "tsx src/sign_lenovo.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
+  "dependencies": {
+    "libsodium-wrappers": "^0.7.15"
+  },
   "devDependencies": {
     "@antfu/eslint-config": "^4.14.1",
+    "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "^24.0.1",
     "eslint": "^9.28.0",
     "tsx": "^4.20.2",
